@@ -1,0 +1,6 @@
+id=k103_transparent_lockscreen
+name=K103 透明随机锁屏
+version=v1.6
+versionCode=7
+author=momo_cat
+description=Boyue Likebook K103 透明随机锁屏：洗牌队列随机换图（一轮内每张恰好一次），亮屏预合成让锁屏透出真正最后一帧；修复 HWC 在 sys.by.standbysetting=1 时改画默认图导致的「连续锁屏同一张壁纸」——改为直接原子替换 standby.jpg、不再发广播。图库 /sdcard/Pictures/K103_Lockscreen。不改 EPD/HWC/boot。

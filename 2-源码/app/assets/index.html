@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>猫猫透明锁屏forAlita</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; padding: 12px; background: #f7f7f7; color: #000;
+         font-family: sans-serif; font-size: 17px; line-height: 1.45; }
+  h1 { font-size: 21px; margin: 2px 0 10px; text-align: center;
+       padding: 12px 8px; background: #000; color: #fff; border-radius: 18px; }
+  h2 { font-size: 17px; margin: 16px 0 7px; padding: 5px 12px;
+       background: #000; color: #fff; border-radius: 14px; }
+  .card { border: 2px solid #000; border-radius: 16px;
+          padding: 11px 12px; margin-bottom: 9px; font-size: 15px; background: #fff; }
+  .card b { font-size: 17px; }
+  button { display: block; width: 100%; margin: 6px 0; padding: 12px 12px;
+           background: #fff; color: #000; border: 2px solid #000; border-radius: 18px;
+           font-family: inherit; font-size: 17px; text-align: left; font-weight: bold; }
+  button.sel { background: #000; color: #fff; }
+  button:active { background: #444; color: #fff; }
+  button .sub { display: block; margin-top: 2px; font-size: 13px; font-weight: normal; }
+  .row { display: flex; gap: 8px; }
+  .row button { flex: 1; text-align: center; font-size: 15px; padding: 11px 3px;
+                border-radius: 16px; }
+  .small { font-size: 14px; }
+  input { width: 100%; padding: 11px; font-family: monospace; font-size: 15px;
+          border: 2px solid #000; border-radius: 14px; background: #fff; color: #000; }
+  pre { margin: 0; padding: 10px; min-height: 44px; max-height: 230px; overflow: auto;
+        white-space: pre-wrap; word-break: break-all; font-size: 13px;
+        border: 2px solid #000; border-radius: 16px; background: #fff; }
+  .hint { margin-top: 12px; padding: 10px 12px; border: 2px dashed #000;
+          border-radius: 16px; font-size: 13px; background: #fff; }
+  .pill { display:inline-block; padding:1px 10px; border-radius:12px; background:#000; color:#fff; font-size:13px; }
+</style>
+</head>
+<body>
+
+<h1>🐱 猫猫透明锁屏 for Alita</h1>
+<div class="card" id="status">正在读取状态…</div>
+
+<h2>图库文件夹</h2>
+<div class="card small">
+  把 PNG / JPG 图片放进下面文件夹（含一层子目录），每次熄屏锁屏随机换一张、前后不重复。<br>
+  <input id="dir" type="text" placeholder="/sdcard/Pictures/K103_Lockscreen">
+  <div class="row" style="margin-top:8px">
+    <button onclick="saveDir()">保存路径</button>
+    <button onclick="mkdir()">创建文件夹</button>
+  </div>
+</div>
+
+<h2>换图方式</h2>
+<div class="row" id="shuffleRow">
+  <button onclick="setconf('SHUFFLE','1')" id="shuffle1">随机换图<span class="sub">透明底·推荐</span></button>
+  <button onclick="setconf('SHUFFLE','0')" id="shuffle0">固定贴纸</button>
+</div>
+<div class="card small">缩放方式（图片怎么铺满 1404×1872）</div>
+<div class="row" id="scaleRow">
+  <button onclick="setconf('SCALE','cover')" id="scaleCover">铺满裁剪</button>
+  <button onclick="setconf('SCALE','fit')" id="scaleFit">完整显示</button>
+  <button onclick="setconf('SCALE','stretch')" id="scaleStretch">拉伸</button>
+</div>
+<div class="card small">背景（图片透明区显示什么，随机/固定模式都生效）</div>
+<div class="row" id="bgRow">
+  <button onclick="setconf('BG_MODE','white')" id="bgWhite">纯白底</button>
+  <button onclick="setconf('BG_MODE','lastframe')" id="bgFrame">透出上一帧<span class="sub">锁屏前画面</span></button>
+</div>
+
+<h2>画质与节电</h2>
+<div class="row" id="qualityRow">
+  <button onclick="stepQuality(-8)">画质 －</button>
+  <button onclick="stepQuality(8)">画质 ＋</button>
+</div>
+<div class="card small">JPEG 质量 <span class="pill" id="qualityVal">92</span>（越高越清晰、文件越大）</div>
+<div class="card small">抓帧频率（亮屏时多久抓一次画面，越高越贴近锁屏前内容）</div>
+<div class="row" id="trackRow">
+  <button onclick="setconf('TRACK_EVERY','1')" id="track1">0.5 秒<span class="sub">最贴合（推荐）</span></button>
+  <button onclick="setconf('TRACK_EVERY','2')" id="track2">1 秒<span class="sub">均衡</span></button>
+  <button onclick="setconf('TRACK_EVERY','4')" id="track4">2 秒<span class="sub">省电·可能滞后</span></button>
+</div>
+<div class="row" id="refreshRow">
+  <button onclick="setconf('USE_FULLREFRESH','1')" id="rf1">请求全刷</button>
+  <button onclick="setconf('USE_FULLREFRESH','0')" id="rf0">不碰刷新</button>
+</div>
+
+<h2>操作</h2>
+<div class="row">
+  <button onclick="next()">立即换一张</button>
+  <button onclick="refresh()">刷新状态</button>
+</div>
+<div class="row">
+  <button onclick="showGallery()">图库列表</button>
+  <button onclick="showLog()">查看日志</button>
+</div>
+<div class="row">
+  <button onclick="reset()">恢复默认</button>
+  <button onclick="restore()">还原原厂图</button>
+</div>
+<div class="row">
+  <button onclick="enable(1)" id="en1">启用模块</button>
+  <button onclick="enable(0)" id="en0">停用模块</button>
+</div>
+
+<h2>输出</h2>
+<pre id="out">—</pre>
+
+<div class="hint">
+  首次使用会弹出 root 授权，请点「允许」。设置保存后约 3 秒生效，无需重启。<br>
+  熄屏瞬间自动随机换图；默认「透出上一帧」= 随机图叠加锁屏前真实画面，想完全不透明可选「纯白底」。<br>
+  v1.6 起亮屏时会持续预合成：画面一变就更新待机图，锁屏读到的就是最后一帧；
+  抓帧频率越低越省电、但可能滞后，追求贴合请选 0.5 秒。<br>
+  图库默认 sdcard 目录，可直接在文件管理器里放图；「立即换一张」约 3 秒后更新。<br>
+  洗牌队列随机：整库打乱依次播放，一轮内每张恰好出现一次，不重复、不扎堆，播完自动重洗。<br>
+  模块不修改 EPD 波形 / HWC / boot，卸载可在面具里还原原厂锁屏图。
+</div>
+
+<script>
+var CTL = '/data/adb/modules/k103_transparent_lockscreen/tools/lockscreen_ctl.sh';
+var S = {}, pending = null, busy = false;
+
+function b64url(s) {
+  return btoa(unescape(encodeURIComponent(s)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function fromB64(s) {
+  s = s.replace(/-/g, '+').replace(/_/g, '/');
+  while (s.length % 4) s += '=';
+  var bin = atob(s);
+  try {
+    var arr = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new TextDecoder('utf-8').decode(arr);
+  } catch (e) { return decodeURIComponent(escape(bin)); }
+}
+window.onCmdResult = function (b64) {
+  busy = false;
+  var text = fromB64(b64);
+  document.getElementById('out').textContent = text.slice(-4000) || '(无输出)';
+  if (pending) { var f = pending; pending = null; f(text); }
+};
+function run(cmd, cb) {
+  if (busy) return;
+  busy = true; pending = cb || null;
+  setTimeout(function () { busy = false; }, 9000);
+  location.href = 'http://cmd.local/run/' + b64url(cmd + ' 2>&1');
+}
+function sh(sub, cb) { run('sh ' + CTL + ' ' + sub, cb); }
+function refresh() { sh('status', parse); }
+
+function parse(t) {
+  var sec = '', conf = {};
+  var d = { count:'0', current:'(未选图)', pending:'(无)', last:'(无)', enabled:'', daemon:'', version:'' };
+  t.split('\n').forEach(function (raw) {
+    var line = raw.replace(/\r/g, '');
+    if (line.indexOf('---') === 0) { sec = line; return; }
+    if (!line) return;
+    switch (sec) {
+      case '---CONF---':
+        var p = line.indexOf('=');
+        if (p > 0) conf[line.slice(0, p)] = line.slice(p + 1).replace(/^"|"$/g, '');
+        break;
+      case '---COUNT---': d.count = line.trim(); break;
+      case '---CURRENT---': d.current = line.trim(); break;
+      case '---PENDING---': d.pending = line.trim(); break;
+      case '---LAST---': d.last = line.trim(); break;
+      case '---ENABLED---': d.enabled = line.trim(); break;
+      case '---DAEMON---': d.daemon = line.trim(); break;
+      case '---VER---':
+        if (line.indexOf('version=') === 0) d.version = line.slice(8);
+        break;
+    }
+  });
+  S = conf;
+  S._count = d.count; S._current = d.current; S._pending = d.pending;
+  S._last = d.last; S._enabled = d.enabled; S._daemon = d.daemon; S._version = d.version;
+  render();
+}
+function short(s, n) { if (!s) return '—'; return s.length > n ? '…' + s.slice(-n) : s; }
+function mark(id, on) { var e = document.getElementById(id); if (e) e.className = on ? 'sel' : ''; }
+function render() {
+  var daemonOk = S._daemon && S._daemon.indexOf('running') === 0;
+  document.getElementById('status').innerHTML =
+    '<b>模块 ' + (S._version || '?') + '</b>　守护：' + (daemonOk ? '运行中' : '未运行') +
+    '　开关：' + (S._enabled === '1' ? '启用' : '停用') + '<br>' +
+    '图库：<b>' + S._count + '</b> 张　方式：' + (S.SHUFFLE === '1' ? '随机换图' : '固定贴纸') +
+    '　背景：' + (S.BG_MODE === 'white' ? '纯白底' : '透出上一帧') + '<br>' +
+    '抓帧：' + (S.TRACK_EVERY === '4' ? '2 秒' : S.TRACK_EVERY === '2' ? '1 秒' : '0.5 秒') + '<br>' +
+    '当前：' + short(S._current, 30) + '<br>' +
+    '待显示：' + short(S._pending, 30) + '<br>' +
+    '上次写入：' + S._last;
+  document.getElementById('dir').value = S.IMAGE_DIR || '';
+  document.getElementById('qualityVal').textContent = S.JPEG_QUALITY || '92';
+  mark('shuffle1', S.SHUFFLE === '1'); mark('shuffle0', S.SHUFFLE !== '1');
+  mark('scaleCover', S.SCALE === 'cover'); mark('scaleFit', S.SCALE === 'fit');
+  mark('scaleStretch', S.SCALE === 'stretch');
+  mark('bgWhite', S.BG_MODE === 'white'); mark('bgFrame', S.BG_MODE === 'lastframe');
+  mark('track1', S.TRACK_EVERY === '1'); mark('track2', S.TRACK_EVERY === '2');
+  mark('track4', S.TRACK_EVERY === '4');
+  mark('rf1', S.USE_FULLREFRESH === '1'); mark('rf0', S.USE_FULLREFRESH !== '1');
+  mark('en1', S._enabled === '1'); mark('en0', S._enabled !== '1');
+}
+function setconf(k, v) { v = String(v).replace(/'/g, ''); sh("set " + k + " '" + v + "'", refresh); }
+function stepQuality(d) {
+  var v = Math.max(50, Math.min(100, (parseInt(S.JPEG_QUALITY || '92', 10) || 92) + d));
+  setconf('JPEG_QUALITY', v);
+}
+function saveDir() {
+  var v = document.getElementById('dir').value.trim();
+  if (!/^\/sdcard\/[A-Za-z0-9_\/.\- ]+$/.test(v)) {
+    document.getElementById('out').textContent = '路径不合法：须以 /sdcard/ 开头，只含字母数字 / _ . - 空格';
+    return;
+  }
+  setconf('IMAGE_DIR', v);
+}
+function mkdir() { sh('mkdir', refresh); }
+function next() { sh('next', function () { setTimeout(refresh, 3200); }); }
+function enable(v) { sh('enable ' + v, refresh); }
+function reset() { sh('reset', refresh); }
+function restore() { sh('restore', refresh); }
+function showLog() { sh('log'); }
+function showGallery() { sh('gallery'); }
+
+refresh();
+</script>
+</body>
+</html>
